@@ -1,0 +1,50 @@
+name: Clippy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  merge_group:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+
+jobs:
+  clippy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Clippy check
+        run: >
+          cargo clippy
+          -- -D warnings -D clippy::cargo
+          -D clippy::complexity
+          -D clippy::nursery
+          -D clippy::perf
+          -D clippy::style
+          -D clippy::suspicious
+          -D clippy::pedantic
+          -A clippy::single_char_lifetime_names
+          -A clippy::cargo_common_metadata
+          -A clippy::items-after-statements
+          -A clippy::multiple_crate_versions
+          -A clippy::module_name_repetitions
+          -A clippy::missing_const_for_fn
+          -A clippy::single-match-else
+          -A clippy::match-bool
+          -A clippy::uninlined_format_args
+          -A clippy::redundant_pub_crate
+          -A clippy::missing_errors_doc
+
