@@ -2,6 +2,8 @@ use std::{fmt::Display, io::Write};
 
 use colored::Colorize;
 use derive_more::Constructor;
+use once_cell::sync::Lazy;
+use regex::Regex;
 use sqlx::{sqlite::SqliteRow, Row};
 
 use crate::{apple, apple::copy_to_clipboard};
@@ -20,9 +22,17 @@ fn handle_query_thread(
     writer: &mut impl Write,
 ) -> anyhow::Result<()> {
     let text: Vec<u8> = row.get(0);
-    let text = apple::blob_to_text(&text).unwrap();
 
     if text.is_empty() {
+        return Ok(());
+    }
+
+    let text = apple::blob_to_text(&text).unwrap();
+
+    // if the entire message is whitespace, don't print it
+    static ALL_WHITESPACE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s+$").unwrap());
+
+    if ALL_WHITESPACE.is_match(&text) {
         return Ok(());
     }
 
@@ -42,6 +52,11 @@ fn handle_query_thread(
 fn handle_query_all(row: &SqliteRow) {
     let handle_id = row.get(0);
     let text: Vec<u8> = row.get(1);
+
+    if text.is_empty() {
+        return;
+    }
+
     let text = apple::blob_to_text(&text).unwrap_or_default();
 
     let handle_id = Colored(handle_id);
