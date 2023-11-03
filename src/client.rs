@@ -15,27 +15,41 @@ pub struct Client {
     me: String,
 }
 
+fn to_printable_text(text: &[u8]) -> Option<String> {
+    if text.is_empty() {
+        return None;
+    }
+
+    let text = apple::blob_to_text(text).unwrap();
+    let text = text.trim();
+
+    // if the entire message is whitespace OR if not printable Object Replacement Character (ORC),
+    // don't print it
+    static TEXT_APPEARS_BLANK: Lazy<Regex> =
+        Lazy::new(|| Regex::new(r"^\s+$|^\u{fffc}*$").unwrap());
+    if TEXT_APPEARS_BLANK.is_match(text) {
+        return None;
+    }
+
+    // replace newlines with spaces
+    let text = text.replace('\n', " ");
+
+    // replace multiple spaces with single space so that the output is all on one line
+    static MULTIPLE_SPACES: Lazy<Regex> = Lazy::new(|| Regex::new(r"\s+").unwrap());
+    let text = MULTIPLE_SPACES.replace_all(&text, " ");
+
+    Some(text.to_string())
+}
+
 fn handle_query_thread(
     row: &SqliteRow,
     to: &str,
     me: &str,
     writer: &mut impl Write,
 ) -> anyhow::Result<()> {
-    let text: Vec<u8> = row.get(0);
-
-    if text.is_empty() {
+    let Some(text) = to_printable_text(row.get(0)) else {
         return Ok(());
-    }
-
-    let text = apple::blob_to_text(&text).unwrap();
-
-    // if the entire message is whitespace, don't print it
-    static ALL_WHITESPACE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s+$").unwrap());
-
-    if ALL_WHITESPACE.is_match(&text) {
-        return Ok(());
-    }
-
+    };
     let from_me: bool = row.get(1);
 
     if from_me {
@@ -51,13 +65,10 @@ fn handle_query_thread(
 
 fn handle_query_all(row: &SqliteRow) {
     let handle_id = row.get(0);
-    let text: Vec<u8> = row.get(1);
 
-    if text.is_empty() {
+    let Some(text) = to_printable_text(row.get(1)) else {
         return;
-    }
-
-    let text = apple::blob_to_text(&text).unwrap_or_default();
+    };
 
     let handle_id = Colored(handle_id);
 
