@@ -657,7 +657,6 @@ dependencies = [
  "dirs",
  "once_cell",
  "regex",
- "ron",
  "serde",
  "sqlx",
  "tokio",
@@ -1124,18 +1123,6 @@ dependencies = [
  "spin 0.9.8",
  "untrusted 0.9.0",
  "windows-sys",
-]
-
-[[package]]
-name = "ron"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b91f7eff05f748767f183df4320a63d6936e9c6107d97c9e6bdd9784f4289c94"
-dependencies = [
- "base64",
- "bitflags 2.4.1",
- "serde",
- "serde_derive",
 ]
 
 [[package]]
