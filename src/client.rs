@@ -75,13 +75,39 @@ fn handle_query_all(row: &SqliteRow) {
     println!("{handle_id} {text}");
 }
 
+#[derive(sqlx::FromRow, Debug)]
+pub struct Handle {
+    #[sqlx(rename = "ROWID")]
+    row_id: i64,
+}
+
 impl Client {
-    pub async fn print_messages_with_handle_id(&self, handle_id: i64) -> anyhow::Result<()> {
+    pub async fn get_handle_from_number(&self, id: &str) -> anyhow::Result<Vec<Handle>> {
+        let pattern = format!("%{}", id);
+
+        let result = sqlx::query_as("SELECT ROWID FROM handle WHERE id LIKE ?")
+            .bind(pattern)
+            .fetch_all(&self.pool)
+            .await?;
+
+        Ok(result)
+    }
+
+    pub async fn print_messages_with_handle_id(
+        &self,
+        handle_ids: Vec<Handle>,
+    ) -> anyhow::Result<()> {
+        let handle_ids = handle_ids
+            .iter()
+            .map(|h| h.row_id.to_string())
+            .collect::<Vec<_>>();
+
+        let ids = handle_ids.join(",");
+
         let query =
-            sqlx::query("SELECT attributedBody, is_from_me FROM message WHERE handle_id = ?")
-                .bind(handle_id)
-                .fetch_all(&self.pool)
-                .await?;
+            format!("SELECT attributedBody, is_from_me FROM message WHERE handle_id IN ( {ids} )");
+
+        let query = sqlx::query(&query).fetch_all(&self.pool).await?;
 
         let mut output: Vec<u8> = Vec::new();
 

@@ -8,9 +8,7 @@ use crate::split::split_by;
 pub fn blob_to_text(blob_data: &[u8]) -> Option<String> {
     let blob_data = split_by(blob_data, b"NSString");
 
-    let Some(blob_data) = blob_data.get(1) else {
-        return None;
-    };
+    let blob_data = blob_data.get(1)?;
 
     let blob_data = blob_data.get(5..).unwrap();
     let text = if blob_data[0] == 129 {

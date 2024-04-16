@@ -636,7 +636,6 @@ dependencies = [
  "dirs",
  "once_cell",
  "regex",
- "serde",
  "sqlx",
  "tokio",
 ]
